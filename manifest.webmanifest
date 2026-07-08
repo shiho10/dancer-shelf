@@ -1,0 +1,17 @@
+{
+  "name": "ダンサー・スカウティングDB",
+  "short_name": "ダンサー棚",
+  "description": "Instagram/Threads発信のロールモデル探し用の絞り込みデータベース。バトル・自然・初心者発信・世界観とフォロワー数で調査済みダンサーを絞り込む。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6f2",
+  "theme_color": "#2e6049",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

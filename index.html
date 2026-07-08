@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#2e6049" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15181a" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ダンサー棚">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<title>ダンサー・スカウティングDB</title>
+<style>
+  :root{
+    --ground:#f5f6f2;
+    --panel:#ffffff;
+    --panel-2:#eef1ea;
+    --ink:#1b1e1c;
+    --ink-soft:#454b46;
+    --muted:#6c726b;
+    --line:#dde1d8;
+    --line-strong:#c7cdbf;
+    --accent:#2e6049;      /* forest — structure / active filters / focus */
+    --accent-ink:#ffffff;
+    --signal:#e4623b;      /* coral — the flagship "3-trait" idea */
+    --signal-soft:#fbe6de;
+    --ok:#2f8f5b;   --ok-bg:#e4f1e8;
+    --part:#c4881f; --part-bg:#f6ecd6;
+    --unk:#9aa0a6;  --unk-bg:#eceef0;
+    --shadow:0 1px 2px rgba(20,30,22,.06),0 8px 24px rgba(20,30,22,.05);
+    --radius:14px;
+    --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:"SFMono-Regular",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#15181a;
+      --panel:#1e2225;
+      --panel-2:#262b2e;
+      --ink:#e9ece7;
+      --ink-soft:#c2c8c1;
+      --muted:#8c938b;
+      --line:#31373a;
+      --line-strong:#414850;
+      --accent:#5ba982;
+      --accent-ink:#0f1512;
+      --signal:#f0774f;
+      --signal-soft:#3a241d;
+      --ok:#5fc088;   --ok-bg:#1c3327;
+      --part:#d7a64b; --part-bg:#3a3016;
+      --unk:#7d848b;  --unk-bg:#2a3033;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#f5f6f2;--panel:#ffffff;--panel-2:#eef1ea;--ink:#1b1e1c;--ink-soft:#454b46;--muted:#6c726b;
+    --line:#dde1d8;--line-strong:#c7cdbf;--accent:#2e6049;--accent-ink:#ffffff;--signal:#e4623b;--signal-soft:#fbe6de;
+    --ok:#2f8f5b;--ok-bg:#e4f1e8;--part:#c4881f;--part-bg:#f6ecd6;--unk:#9aa0a6;--unk-bg:#eceef0;
+    --shadow:0 1px 2px rgba(20,30,22,.06),0 8px 24px rgba(20,30,22,.05);
+  }
+  :root[data-theme="dark"]{
+    --ground:#15181a;--panel:#1e2225;--panel-2:#262b2e;--ink:#e9ece7;--ink-soft:#c2c8c1;--muted:#8c938b;
+    --line:#31373a;--line-strong:#414850;--accent:#5ba982;--accent-ink:#0f1512;--signal:#f0774f;--signal-soft:#3a241d;
+    --ok:#5fc088;--ok-bg:#1c3327;--part:#d7a64b;--part-bg:#3a3016;--unk:#7d848b;--unk-bg:#2a3033;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;font-size:15px}
+  a{color:inherit}
+  h1,h2,h3{margin:0;text-wrap:balance;line-height:1.2}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  /* ---- header ---- */
+  header{border-bottom:1px solid var(--line);background:
+     linear-gradient(180deg,var(--panel-2),transparent);}
+  .head-in{padding:30px 0 22px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-size:clamp(26px,4.4vw,40px);letter-spacing:-.02em;margin-top:8px;font-weight:800}
+  .sub{color:var(--muted);max-width:56ch;margin-top:10px;font-size:14px}
+  .themebtn{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink-soft);
+    border-radius:999px;padding:8px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .themebtn:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---- honesty banner ---- */
+  .note{margin:18px 0 4px;border:1px dashed var(--line-strong);border-radius:var(--radius);
+    background:var(--panel);padding:14px 16px;font-size:13px;color:var(--ink-soft);display:flex;gap:12px}
+  .note b{color:var(--ink)}
+  .note .dot{color:var(--signal);font-weight:800;flex:none}
+
+  /* ---- controls ---- */
+  .controls{position:sticky;top:0;z-index:20;background:var(--ground);
+    padding:16px 0 14px;border-bottom:1px solid var(--line);margin-top:18px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .preset{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);
+    border-radius:999px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+    display:inline-flex;align-items:center;gap:7px}
+  .preset:hover{border-color:var(--accent)}
+  .preset.flag{border-color:var(--signal);color:var(--signal)}
+  .preset.flag:hover{background:var(--signal-soft)}
+  .preset.ghost{color:var(--muted)}
+
+  .rows{display:grid;grid-template-columns:1fr;gap:12px}
+  .row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+  .fieldlab{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin-right:2px}
+
+  .toggles{display:flex;flex-wrap:wrap;gap:7px}
+  .tg{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink-soft);
+    border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;
+    display:inline-flex;align-items:center;gap:7px;transition:.12s}
+  .tg .k{font-size:15px;line-height:1}
+  .tg[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .tg:hover{border-color:var(--accent)}
+
+  .strict{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;user-select:none}
+  .switch{width:38px;height:22px;border-radius:999px;background:var(--line-strong);position:relative;transition:.15s;flex:none}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .strict[aria-pressed="true"] .switch{background:var(--accent)}
+  .strict[aria-pressed="true"] .switch::after{left:18px}
+
+  .genres{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink-soft);
+    border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+
+  input[type="text"],input[type="number"]{font-family:inherit;font-size:13.5px;color:var(--ink);
+    background:var(--panel);border:1px solid var(--line-strong);border-radius:9px;padding:8px 11px}
+  input[type="number"]{width:104px}
+  input.num{font-family:var(--mono)}
+  input[type="text"]{min-width:180px;flex:1}
+  input:focus,select:focus,.tg:focus-visible,.chip:focus-visible,.preset:focus-visible,.themebtn:focus-visible,
+  .strict:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  select{font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line-strong);border-radius:9px;padding:8px 10px}
+  .rangesep{color:var(--muted)}
+
+  /* ---- results meta ---- */
+  .meta{display:flex;align-items:baseline;gap:10px;margin:22px 0 14px}
+  .count{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .count.zero{color:var(--signal)}
+  .metalab{font-size:12px;color:var(--muted);letter-spacing:.04em}
+
+  /* ---- cards ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding-bottom:10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 18px 16px;position:relative;display:flex;flex-direction:column;gap:12px}
+  .card.match3{border-color:var(--signal)}
+  .tri{position:absolute;top:0;right:0;background:var(--signal);color:#fff;font-size:10px;font-weight:800;
+    letter-spacing:.08em;padding:4px 9px;border-radius:0 var(--radius) 0 10px}
+  .c-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .c-name{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .c-handle{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+  .c-foll{text-align:right;flex:none}
+  .c-foll .n{font-family:var(--mono);font-size:19px;font-weight:700;letter-spacing:-.02em}
+  .c-foll .l{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:1px}
+  .c-foll.over .n{color:var(--part)}
+
+  .badges{display:flex;flex-wrap:wrap;gap:6px}
+  .gb{font-size:11px;font-weight:700;letter-spacing:.03em;border-radius:6px;padding:3px 9px;
+    background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--line)}
+  .gb.region{background:transparent;color:var(--muted);font-weight:600}
+
+  /* trait strip — the signature comparison matrix */
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .cell{border-radius:9px;padding:8px 4px 7px;text-align:center;border:1px solid var(--line)}
+  .cell .m{font-family:var(--mono);font-size:15px;font-weight:700;line-height:1}
+  .cell .t{display:block;font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.02em}
+  .cell.yes{background:var(--ok-bg);border-color:transparent}
+  .cell.yes .m{color:var(--ok)}
+  .cell.partial{background:var(--part-bg);border-color:transparent}
+  .cell.partial .m{color:var(--part)}
+  .cell.unknown{background:var(--unk-bg);border-color:transparent}
+  .cell.unknown .m{color:var(--unk)}
+
+  .c-note{font-size:13px;color:var(--ink-soft);line-height:1.62}
+  .c-foot{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:2px;
+    padding-top:12px;border-top:1px solid var(--line)}
+  .c-foot a{font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;display:inline-flex;gap:4px;align-items:center}
+  .c-foot a:hover{text-decoration:underline}
+  .checked{font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:auto}
+
+  /* empty state */
+  .empty{border:1px dashed var(--line-strong);border-radius:var(--radius);background:var(--panel);
+    padding:36px 24px;text-align:center;color:var(--ink-soft)}
+  .empty h3{font-size:17px;margin-bottom:8px;color:var(--ink)}
+  .empty p{font-size:13.5px;max-width:52ch;margin:0 auto 4px;color:var(--muted)}
+  .empty .cta{margin-top:16px;display:inline-block;border:1px solid var(--accent);color:var(--accent);
+    background:transparent;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .empty .cta:hover{background:var(--accent);color:var(--accent-ink)}
+
+  /* legend / footer */
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:26px 0 8px;font-size:12px;color:var(--muted)}
+  .legend .li{display:inline-flex;align-items:center;gap:7px}
+  .legend .m{font-family:var(--mono);font-weight:700}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:22px 0 46px;color:var(--muted);font-size:12.5px}
+  footer p{margin:0 0 8px;max-width:74ch}
+  footer b{color:var(--ink-soft)}
+
+  @media (max-width:560px){
+    input[type="text"]{min-width:100%}
+    .head-in{align-items:flex-start}
+  }
+  /* ---- header actions (add / copy / theme) ---- */
+  .hactions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .hbtn{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink-soft);
+    border-radius:999px;padding:8px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap;font-weight:600}
+  .hbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .hbtn.add{border-color:var(--accent);color:var(--accent)}
+  .hbtn.add:hover{background:var(--accent);color:var(--accent-ink)}
+
+  /* ---- home-screen tip ---- */
+  .tip{margin:14px 0 0;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--ink-soft);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+  .tip b{color:var(--ink)}
+  .tip>span{flex:none}
+  .tip button{margin-left:auto;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;flex:none;padding:0 2px}
+
+  /* ---- local (this-device) markers & controls ---- */
+  .gb.local{background:var(--signal-soft);color:var(--signal);border-color:transparent;font-weight:700}
+  .localctl{display:flex;gap:8px;margin-top:8px;margin-left:auto}
+  .localctl button{border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);
+    border-radius:8px;padding:4px 11px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .localctl button:hover{border-color:var(--signal);color:var(--signal)}
+
+  /* ---- editor dialog ---- */
+  dialog#ed{border:none;border-radius:16px;padding:0;max-width:440px;width:calc(100vw - 32px);
+    background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  dialog#ed::backdrop{background:rgba(10,14,11,.5)}
+  .ed-in{padding:20px}
+  .ed-in h3{font-size:17px;margin-bottom:16px}
+  .ed-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .ed-field>label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .ed-field input,.ed-field select,.ed-field textarea{font-family:inherit;font-size:15px;color:var(--ink);
+    background:var(--ground);border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;width:100%}
+  .ed-field textarea{min-height:62px;resize:vertical;line-height:1.5}
+  .ed-traits{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .ed-traits label{font-size:12px;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px}
+  .ed-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;align-items:center}
+  .ed-foot .err{margin-right:auto;color:var(--signal);font-size:12px}
+  .ed-foot button{border-radius:999px;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;
+    border:1px solid var(--line-strong);background:var(--panel);color:var(--ink)}
+  .ed-foot button.save{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  @media (max-width:560px){
+    input[type="text"]{min-width:100%}
+    .head-in{align-items:flex-start}
+    .wrap{padding:0 14px}
+    .controls{padding:12px 0 10px}
+    .count{font-size:24px}
+    .grid{grid-template-columns:1fr}
+    .ed-traits{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<header>
+  <div class="wrap">
+    <div class="head-in">
+      <div>
+        <div class="eyebrow">Dancer scouting database</div>
+        <h1>ダンサー・スカウティングDB</h1>
+        <p class="sub">Instagram/Threads発信のロールモデル探し用。フォロワー数と4つの特徴で、調査済みのダンサーを絞り込むツール。ハッシュタグを目視で追う代わりに、条件で一発フィルタ。</p>
+      </div>
+      <div class="hactions">
+        <button class="hbtn add" id="addBtn" type="button">＋ 追加</button>
+        <button class="hbtn" id="copyBtn" type="button">📤 Claudeにコピー</button>
+        <button class="themebtn" id="themeBtn" type="button">◐ テーマ</button>
+      </div>
+    </div>
+    <div class="note">
+      <span class="dot">●</span>
+      <div><b>これはInstagram全体の検索ではありません。</b> 私が直接プロフィールを確認して集めた候補だけを収録した“育てる”データベースです。フォロワー数での横断検索はInstagram側の仕様上できないため、この形にしています。特徴は事実ベースで <span class="num">✓</span> 確認／<span class="num">△</span> 一部・示唆／<span class="num">?</span> 未確認 の3段階。</div>
+    </div>
+    <div class="tip" id="tip">
+      <span>📱</span>
+      <div><b>スマホでアプリのように使う：</b>ブラウザの共有ボタン→「ホーム画面に追加」でアイコンから開けます。<b>＋追加</b>した候補は<b>この端末に保存</b>され、<b>📤 Claudeにコピー</b>→チャットに貼れば正式に棚へ反映できます。</div>
+      <button id="tipX" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="presets" id="presets">
+      <button class="preset flag" data-preset="trio" type="button">◎ 自然 × バトル × 初心者</button>
+      <button class="preset" data-preset="battlebeginner" type="button">バトル × 初心者</button>
+      <button class="preset" data-preset="worldview" type="button">世界観が強い人</button>
+      <button class="preset ghost" data-preset="reset" type="button">リセット</button>
+    </div>
+
+    <div class="rows">
+      <div class="row">
+        <span class="fieldlab">特徴で絞る</span>
+        <div class="toggles" id="toggles">
+          <button class="tg" data-trait="nature"   aria-pressed="false" type="button"><span class="k">🌿</span>自然・屋外</button>
+          <button class="tg" data-trait="battle"   aria-pressed="false" type="button"><span class="k">⚔️</span>バトル/フリー</button>
+          <button class="tg" data-trait="beginner" aria-pressed="false" type="button"><span class="k">🔰</span>初心者発信</button>
+          <button class="tg" data-trait="worldview" aria-pressed="false" type="button"><span class="k">✧</span>世界観</button>
+        </div>
+        <div class="strict" id="strict" role="button" tabindex="0" aria-pressed="false">
+          <span class="switch"></span><span>✓のみ（△を含めない）</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="fieldlab">フォロワー</span>
+        <input class="num" type="number" id="fmin" value="1000" min="0" step="1000" aria-label="フォロワー下限">
+        <span class="rangesep">〜</span>
+        <input class="num" type="number" id="fmax" value="100000" min="0" step="1000" aria-label="フォロワー上限">
+        <span class="metalab">人（上限を空欄で無制限）</span>
+      </div>
+
+      <div class="row">
+        <span class="fieldlab">ジャンル</span>
+        <select id="genreSel" aria-label="ジャンル"><option value="">すべて</option></select>
+      </div>
+
+      <div class="row">
+        <span class="fieldlab">検索</span>
+        <input type="text" id="q" placeholder="名前・ハンドルで検索（例: chibi）">
+        <select id="sort" aria-label="並び替え">
+          <option value="match">一致した特徴が多い順</option>
+          <option value="foll-asc">フォロワー少ない順</option>
+          <option value="foll-desc">フォロワー多い順</option>
+          <option value="name">名前順</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="meta">
+    <span class="count" id="count">0</span>
+    <span class="metalab" id="countLab">人が条件に一致</span>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <div class="legend">
+    <span class="li"><span class="m" style="color:var(--ok)">✓</span> 確認できた</span>
+    <span class="li"><span class="m" style="color:var(--part)">△</span> 一部・示唆あり</span>
+    <span class="li"><span class="m" style="color:var(--unk)">?</span> 未確認</span>
+    <span class="li">列＝〔🌿自然｜⚔️バトル｜🔰初心者発信｜✧世界観〕</span>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>調査メモ：</b> 各人とも本人のInstagramを直接確認（フォロワー数・発信内容・確認日を記録）。<b>🔰初心者発信</b>の軸は「初心者に向けた<u>動画・投稿での発信</u>」を指します（クラス運営のみは△寄り）。判定は<b>バトル</b>を軸に、<b>自然</b>または<b>初心者発信</b>を直近2-3ヶ月で2-3件していれば有力、という基準で集めています。<br>本命の「自然×バトル×初心者」に最も近いのは <b>coyun</b>（#外で踊る から発見：バトル◎＋外練＝屋外△）。ただし自然・初心者発信の“直近の件数”は各カードのIGリンクから本人ページで最終確認してください。この棚は、専用の<b>ブラウザ拡張「ダンサー・スカウト」</b>で候補を拾いながら継続的に増やせます。</p>
+    <p><b>使い方・拡張：</b> 候補が見つかるたびに私がこのDBに追記していけます。「自然軸をもっと探して」「福岡のダンサーを足して」等、条件を言ってもらえれば行を増やします。フォロワー上限を空欄にすると数十万人規模の有名ダンサーも表示されます。</p>
+  </div>
+</footer>
+
+<dialog id="ed">
+  <form class="ed-in" id="edForm" method="dialog">
+    <h3 id="edTitle">候補を手動で追加</h3>
+    <div class="ed-field"><label>名前</label><input id="e-name" placeholder="表示名（空欄ならハンドル）"></div>
+    <div class="ed-field"><label>IGハンドル（@なし・必須）</label><input id="e-ig" placeholder="例: coyun0317" inputmode="latin" autocapitalize="none" autocorrect="off"></div>
+    <div class="ed-field"><label>フォロワー数</label><input id="e-fol" placeholder="例: 12000／1.2万（不明は空欄）" inputmode="text"></div>
+    <div class="ed-field"><label>ジャンル</label><select id="e-genre"></select></div>
+    <div class="ed-field" id="e-genre-otherwrap" style="display:none"><label>ジャンル（自由入力）</label><input id="e-genre-other"></div>
+    <div class="ed-field"><label>地域</label><input id="e-region" placeholder="例: 大阪"></div>
+    <div class="ed-field"><label>特徴</label><div class="ed-traits" id="e-traits"></div></div>
+    <div class="ed-field"><label>メモ</label><textarea id="e-note" placeholder="調査メモ・一言"></textarea></div>
+    <div class="ed-foot">
+      <span class="err" id="e-err"></span>
+      <button type="button" id="e-cancel">キャンセル</button>
+      <button type="submit" class="save" id="e-save">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const SEED = [
+  {
+    name:"MASAYUKI KINSHI", ig:"dancer_kin", threads:"dancer_kin",
+    followers:12000, genre:"Soul / Waack", region:"名古屋",
+    traits:{nature:"unknown", battle:"unknown", beginner:"yes", worldview:"yes"},
+    bio:"Art／🇯🇵ダンスの可能性を拡げる／studio MEME(@studio36dance)／HEAT UP／www.dancestudio-meme.com",
+    note:"【2026-07-08 IG実調査】studio MEME主宰・Soul Dance/Waackの指導者＆ファンクイベントHEAT UP主催。投稿2468件・フォロワー1.2万・Threadsあり。🔰初心者◎=『超基礎練 じっくりoneStep』『はじめてWaack超初級』『WAACK SUPER BASIC』など基礎の発信が主軸。✧世界観◎=『正解は有るようで無い/自由に踊っていい』等の価値観を言語化。⚠️バトル出場の投稿は確認できず(基準の“バトル軸”は未充足)、屋外/自然投稿もなし＝実態は指導者・イベント主催寄り。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"IGA", ig:"igaaaaaaaaaa", threads:null,
+    followers:12000, genre:"Pop", region:"札幌",
+    traits:{nature:"unknown", battle:"yes", beginner:"partial", worldview:"yes"},
+    note:"札幌のPOPPIN/ANIMATION/FLOOR/FINGERSTYLEダンサー。unreal_animationdance_battle で優勝（東京編 UNREAL in TOKYO vol.2 でも優勝）＝現役の強豪でバトル◎。NARI(nari.digitz)との対戦動画も。『蠢く』『手の囁きシリーズ』など概念的で作り込んだ発信が続き世界観◎。レッスンを実施（next lesson告知あり）＝初心者△（クラスは確認、初心者向け“動画発信”は要確認）。屋外投稿は未確認（自然?）。フォロワー約1.2万で範囲内。あなたの保存「ダンス」から発見。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"飛鳥 / Asuka", ig:"asuka_aswn", threads:null,
+    followers:4001, genre:"Lock", region:"北海道",
+    traits:{nature:"unknown", battle:"yes", beginner:"partial", worldview:"partial"},
+    note:"北海道のLockダンサー（獣医学生）。DANCE DELIGHT・HOOKUP・大阪getdown予選・FUNK top8 など現役バトル多数、AJINOMOTO MissCollegeDancer 2024 優勝でバトル◎。dancestudio_gooflow で火曜のLockレッスン担当＝初心者△（クラスは確認、初心者向け動画発信は要確認）。獣医学生などキャラの出るキャプションで世界観△。屋外投稿は未確認（自然?）。フォロワー4,001で範囲内。あなたの保存「ダンス」から発見。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"coyun / こゆたん", ig:"coyun0317", threads:null,
+    followers:4569, genre:"Lock", region:null,
+    traits:{nature:"partial", battle:"yes", beginner:"partial", worldview:"yes"},
+    note:"大学生Lockダンサー。funky_chicken_battle best4・bytheway_lockingbattle 準優勝・学生Lock 2on2など現役バトル活動が濃い（バトル◎）。山梨での外練など屋外で踊る投稿あり（自然△＝直近の件数は本人ページで要確認）。88681 Cafe Dance Studioで『超入門ストリートダンス（初心者向け）』クラスを担当（初心者△＝クラスは確認、動画発信は要確認）。想いの乗ったエモいキャプションで世界観◎。フォロワー範囲内。#外で踊る から発見。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"ちびゆり / chibiyuri", ig:"chibiyuri", threads:"chibiyuri",
+    followers:8832, genre:"Lock", region:"長野",
+    traits:{nature:"unknown", battle:"partial", beginner:"yes", worldview:"yes"},
+    note:"(一社)長野県ストリートダンス普及協会 代表理事。学校での「心のダンス授業」で子ども4,000人超、高齢者フレイル予防の『健康ディスコ』も。オール即興のショーケースと、ダンス・音楽に救われた人生を綴る発信が深い。初心者・非ダンサーへのフォーカスが全員中で最も明確。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"Tomoe / morikawatomoe", ig:"morikawatomoe", threads:null,
+    followers:13000, genre:"HipHop", region:"大阪",
+    traits:{nature:"unknown", battle:"unknown", beginner:"yes", worldview:"partial"},
+    note:"大阪のダンサー／講師。bio「踊るって楽しいを届けたい」。生徒との日常や成長、大人の初心者クラスの発信が中心で、初心者フォーカスは強い。一方でストリートバトル歴の根拠はサイト・IGとも確認できず。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"Ringo Winbee", ig:"ringo_winbee_official", threads:"ringo_winbee_official",
+    followers:64000, genre:"Pop", region:null,
+    traits:{nature:"unknown", battle:"partial", beginner:"partial", worldview:"partial"},
+    note:"Popping／振付／モデル／イベント主催。K-POP系バトルイベントの主催・出演で現役感はあるが、モデル業・ブランド寄りの発信が多く、初心者向けというより“魅せる”方向。親しみやすさは有り。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"yurinasia", ig:"yurinasia", threads:"yurinasia",
+    followers:83000, genre:"Street/Choreo", region:"福岡",
+    traits:{nature:"unknown", battle:"partial", beginner:"partial", worldview:"yes"},
+    note:"認証済みアーティスト。クルー jABBKLAB を主宰し振付・レッスン、バトル(CCB)の審査員も。『母奮闘記』『地元愛』など世界観の発信は収録中で随一。レッスンは初心者専用ではなく振付寄り。ブランド仕事も多い。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"TAISUKE NONAKA", ig:"bboy_taisuke", threads:"bboy_taisuke",
+    followers:131000, genre:"Break", region:null,
+    traits:{nature:"unknown", battle:"yes", beginner:"yes", worldview:"partial"},
+    note:"世界的ブレイカー。トップレベルの現役バトル活動と、地域での初心者・キッズクラスを両立。物語性のある発信もある“バトル×初心者”の代表格。ただしフォロワーは1,000〜数万の範囲を大きく超過。",
+    checkedAt:"2026-07-08"
+  },
+  {
+    name:"Miyu", ig:"miyudance_", threads:"miyudance_",
+    followers:549000, genre:"Movement/Freestyle", region:"日本 / LA",
+    traits:{nature:"unknown", battle:"yes", beginner:"unknown", worldview:"partial"},
+    note:"世界チャンピオンのムーブメントアーティスト。表現力・実績は別格だが、発信は作品／表現中心で初心者向けの要素は薄い。フォロワーは範囲を大きく超過。レンジ上限の参考として収録。",
+    checkedAt:"2026-07-08"
+  }
+];
+
+const TRAITS = [
+  {key:"nature",   icon:"🌿", short:"自然"},
+  {key:"battle",   icon:"⚔️", short:"バトル"},
+  {key:"beginner", icon:"🔰", short:"初心者発信"},
+  {key:"worldview",icon:"✧",  short:"世界観"}
+];
+const MARK = {yes:"✓", partial:"△", unknown:"?"};
+
+// ---- state ----
+const state = {
+  toggles:{nature:false,battle:false,beginner:false,worldview:false},
+  strict:false,
+  genres:new Set(),
+  fmin:1000, fmax:100000,
+  q:"", sort:"match"
+};
+
+// ---- local (this-device) additions via localStorage ----
+const LS_KEY = "dancerShelfLocal.v1";
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || []; }catch(e){ return []; } }
+function saveLocal(a){ try{ localStorage.setItem(LS_KEY, JSON.stringify(a)); }catch(e){} }
+let LOCAL = loadLocal();
+let DANCERS = SEED.concat(LOCAL.map(d=>({...d,_local:true})));
+function rebuild(){ LOCAL = loadLocal(); DANCERS = SEED.concat(LOCAL.map(d=>({...d,_local:true}))); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// ---- helpers ----
+function fmtFollowers(n){
+  if(n==null) return "—";
+  if(n>=10000){ const m=n/10000; return (Number.isInteger(m)?m:m.toFixed(1))+"万"; }
+  return n.toLocaleString("en-US");
+}
+function traitPasses(val, strict){ return strict ? val==="yes" : (val==="yes"||val==="partial"); }
+function matchScore(d){ // count of yes(1)/partial(.5) across traits — for "match" sort
+  return TRAITS.reduce((s,t)=>{const v=d.traits[t.key];return s+(v==="yes"?1:v==="partial"?0.5:0);},0);
+}
+
+// ---- render genre pulldown ----
+const GENRE_VOCAB = ["Waack","Lock","Pop","Break","HipHop","Bepop","Girls","Jazz"];
+const dataGenres = [...new Set(DANCERS.map(d=>d.genre).filter(Boolean))];
+const extraGenres = dataGenres.filter(g=>!GENRE_VOCAB.includes(g));
+const allGenres = [...GENRE_VOCAB, ...extraGenres];
+const genreSel = document.getElementById("genreSel");
+allGenres.forEach(g=>{
+  const o=document.createElement("option"); o.value=g; o.textContent=g; genreSel.appendChild(o);
+});
+genreSel.addEventListener("change",e=>{
+  state.genres.clear();
+  if(e.target.value) state.genres.add(e.target.value);
+  render();
+});
+
+// ---- filter + render ----
+function passes(d){
+  for(const t of TRAITS){
+    if(state.toggles[t.key] && !traitPasses(d.traits[t.key], state.strict)) return false;
+  }
+  if(state.genres.size && !state.genres.has(d.genre)) return false;
+  if(d.followers!=null){
+    if(d.followers < state.fmin) return false;
+    if(state.fmax!=null && d.followers > state.fmax) return false;
+  }
+  if(state.q){
+    const hay=(d.name+" "+d.ig+" "+(d.threads||"")).toLowerCase();
+    if(!hay.includes(state.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function sortList(list){
+  const s=state.sort;
+  const f=n=>(n==null?-1:n);
+  return list.sort((a,b)=>{
+    if(s==="foll-asc")  return f(a.followers)-f(b.followers);
+    if(s==="foll-desc") return f(b.followers)-f(a.followers);
+    if(s==="name")      return a.name.localeCompare(b.name,"ja");
+    return matchScore(b)-matchScore(a) || f(b.followers)-f(a.followers); // match
+  });
+}
+
+const grid=document.getElementById("grid");
+const countEl=document.getElementById("count");
+const countLab=document.getElementById("countLab");
+
+function isTrio(d){ return d.traits.nature==="yes" && traitPasses(d.traits.battle,false) && traitPasses(d.traits.beginner,false); }
+
+function render(){
+  const list=sortList(DANCERS.filter(passes));
+  countEl.textContent=list.length;
+  countEl.classList.toggle("zero", list.length===0);
+  countLab.textContent = list.length===0 ? "人 — 条件に合う人がまだいません" : "人が条件に一致";
+
+  grid.innerHTML="";
+  if(list.length===0){
+    const trioActive = state.toggles.nature && state.toggles.battle && state.toggles.beginner;
+    const e=document.createElement("div");
+    e.className="empty";
+    e.innerHTML = trioActive
+      ? `<h3>「自然 × バトル × 初心者」に合う人はまだ0件です</h3>
+         <p>これは正直な調査結果です。バトルに出つつ初心者向けの活動をする人はいますが（下の「バトル × 初心者」で表示）、その人たちが<b>自然・屋外で踊る投稿</b>まで出している例は今のところ見つかっていません。</p>
+         <p>“自然軸”は引き続き探して、見つかり次第このDBに追加します。</p>
+         <button class="cta" type="button" id="toBB">「バトル × 初心者」で見る</button>`
+      : `<h3>条件に合う人がいません</h3>
+         <p>フォロワー範囲を広げる、特徴トグルを減らす、△を含める（スイッチOFF）などで再検索してみてください。</p>
+         <button class="cta" type="button" id="toReset">条件をリセット</button>`;
+    grid.appendChild(e);
+    const bb=document.getElementById("toBB"); if(bb) bb.addEventListener("click",()=>applyPreset("battlebeginner"));
+    const rs=document.getElementById("toReset"); if(rs) rs.addEventListener("click",()=>applyPreset("reset"));
+    return;
+  }
+
+  list.forEach(d=>{
+    const card=document.createElement("article");
+    card.className="card"+(isTrio(d)?" match3":"");
+    const over = d.followers>100000;
+
+    const strip = TRAITS.map(t=>{
+      const v=d.traits[t.key];
+      return `<div class="cell ${v}"><span class="m">${MARK[v]}</span><span class="t">${t.icon} ${t.short}</span></div>`;
+    }).join("");
+
+    const links = [
+      `<a href="https://www.instagram.com/${encodeURIComponent(d.ig)}/" target="_blank" rel="noopener">◈ Instagram</a>`,
+      d.threads?`<a href="https://www.threads.com/@${encodeURIComponent(d.threads)}" target="_blank" rel="noopener">@ Threads</a>`:""
+    ].join("");
+
+    card.innerHTML=`
+      ${isTrio(d)?`<span class="tri">3条件</span>`:""}
+      <div class="c-head">
+        <div>
+          <div class="c-name">${esc(d.name)}</div>
+          <div class="c-handle">@${esc(d.ig)}</div>
+        </div>
+        <div class="c-foll ${over?"over":""}">
+          <span class="n">${fmtFollowers(d.followers)}</span>
+          <span class="l">followers</span>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="gb">${esc(d.genre)}</span>
+        ${d.region?`<span class="gb region">📍${esc(d.region)}</span>`:""}
+        ${d._local?`<span class="gb local">📱この端末</span>`:""}
+        ${over?`<span class="gb region">範囲外(数十万)</span>`:""}
+      </div>
+      <div class="strip">${strip}</div>
+      ${d.note?`<div class="c-note">${esc(d.note)}</div>`:""}
+      <div class="c-foot">
+        ${links}
+        <span class="checked">確認 ${esc(d.checkedAt)}</span>
+      </div>
+      ${d._local?`<div class="localctl">
+        <button data-ed="${esc(d.ig)}" type="button">編集</button>
+        <button data-del="${esc(d.ig)}" type="button">削除</button>
+      </div>`:""}`;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delLocal(b.dataset.del)));
+  grid.querySelectorAll("[data-ed]").forEach(b=>b.addEventListener("click",()=>openEditor(b.dataset.ed)));
+}
+
+// ---- controls wiring ----
+document.getElementById("toggles").addEventListener("click",e=>{
+  const b=e.target.closest(".tg"); if(!b) return;
+  const k=b.dataset.trait; state.toggles[k]=!state.toggles[k];
+  b.setAttribute("aria-pressed",String(state.toggles[k]));
+  render();
+});
+const strictEl=document.getElementById("strict");
+function toggleStrict(){ state.strict=!state.strict; strictEl.setAttribute("aria-pressed",String(state.strict)); render(); }
+strictEl.addEventListener("click",toggleStrict);
+strictEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleStrict();} });
+
+document.getElementById("fmin").addEventListener("input",e=>{ state.fmin=e.target.value===""?0:+e.target.value; render(); });
+document.getElementById("fmax").addEventListener("input",e=>{ state.fmax=e.target.value===""?null:+e.target.value; render(); });
+document.getElementById("q").addEventListener("input",e=>{ state.q=e.target.value; render(); });
+document.getElementById("sort").addEventListener("change",e=>{ state.sort=e.target.value; render(); });
+
+// ---- presets ----
+function setToggle(k,v){ state.toggles[k]=v; const b=document.querySelector(`.tg[data-trait="${k}"]`); b.setAttribute("aria-pressed",String(v)); }
+function clearGenres(){ state.genres.clear(); const gs=document.getElementById("genreSel"); if(gs) gs.value=""; }
+function setRange(min,max){
+  state.fmin=min; state.fmax=max;
+  document.getElementById("fmin").value=min;
+  document.getElementById("fmax").value=(max==null?"":max);
+}
+function applyPreset(p){
+  ["nature","battle","beginner","worldview"].forEach(k=>setToggle(k,false));
+  if(p==="trio"){ setToggle("nature",true); setToggle("battle",true); setToggle("beginner",true); setRange(0,null); }
+  else if(p==="battlebeginner"){ setToggle("battle",true); setToggle("beginner",true); setRange(0,null); }
+  else if(p==="worldview"){ setToggle("worldview",true); setRange(0,null); }
+  else if(p==="reset"){ clearGenres(); state.q=""; document.getElementById("q").value=""; setRange(1000,100000); }
+  render();
+  window.scrollTo({top:0,behavior:state.reduce?"auto":"smooth"});
+}
+document.getElementById("presets").addEventListener("click",e=>{
+  const b=e.target.closest(".preset"); if(!b) return; applyPreset(b.dataset.preset);
+});
+
+// ---- theme toggle ----
+const root=document.documentElement;
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const cur=root.getAttribute("data-theme");
+  const sysDark=window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const now = cur ? cur : (sysDark?"dark":"light");
+  root.setAttribute("data-theme", now==="dark"?"light":"dark");
+});
+
+// ================= 手動追加・編集・削除（この端末に保存） =================
+const ed = document.getElementById("ed");
+const eGenre = document.getElementById("e-genre");
+const eGenreOtherWrap = document.getElementById("e-genre-otherwrap");
+const eTraits = document.getElementById("e-traits");
+let editingIg = null;
+
+// ダイアログ内のジャンル選択肢・特徴セレクトを組み立てる
+(function buildDialog(){
+  ["", ...GENRE_VOCAB, "__other"].forEach(g=>{
+    const o=document.createElement("option");
+    o.value=g; o.textContent = g===""?"（選択）" : g==="__other"?"その他（自由入力）" : g;
+    eGenre.appendChild(o);
+  });
+  eGenre.addEventListener("change",()=>{ eGenreOtherWrap.style.display = eGenre.value==="__other" ? "" : "none"; });
+  TRAITS.forEach(t=>{
+    const lab=document.createElement("label");
+    lab.innerHTML = `<span>${t.icon} ${t.short}</span>`;
+    const sel=document.createElement("select"); sel.id="e-tr-"+t.key;
+    [["unknown","? 未確認"],["partial","△ 一部・示唆"],["yes","✓ 確認"]].forEach(([v,txt])=>{
+      const o=document.createElement("option"); o.value=v; o.textContent=txt; sel.appendChild(o);
+    });
+    lab.appendChild(sel); eTraits.appendChild(lab);
+  });
+})();
+
+function parseFollowers(s){
+  s=(s||"").trim(); if(!s) return null;
+  s=s.replace(/,/g,""); let m;
+  if(m=s.match(/^([\d.]+)\s*万$/)) return Math.round(parseFloat(m[1])*10000);
+  if(m=s.match(/^([\d.]+)\s*千$/)) return Math.round(parseFloat(m[1])*1000);
+  if(m=s.match(/^([\d.]+)\s*[kK]$/)) return Math.round(parseFloat(m[1])*1000);
+  if(m=s.match(/^([\d.]+)\s*[mM]$/)) return Math.round(parseFloat(m[1])*1000000);
+  const n=parseInt(s,10); return isNaN(n)?null:n;
+}
+function todayStr(){ const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+function openEditor(ig){
+  editingIg = ig || null;
+  const cur = ig ? loadLocal().find(d=>d.ig===ig) : null;
+  document.getElementById("edTitle").textContent = ig ? "候補を編集（この端末）" : "候補を手動で追加";
+  document.getElementById("e-name").value   = cur?.name || "";
+  document.getElementById("e-ig").value     = cur?.ig || "";
+  document.getElementById("e-fol").value    = (cur && cur.followers!=null) ? cur.followers : "";
+  document.getElementById("e-region").value = cur?.region || "";
+  document.getElementById("e-note").value   = cur?.note || "";
+  const g = cur?.genre || "";
+  if(g && !GENRE_VOCAB.includes(g)){ eGenre.value="__other"; eGenreOtherWrap.style.display=""; document.getElementById("e-genre-other").value=g; }
+  else { eGenre.value = GENRE_VOCAB.includes(g)?g:""; eGenreOtherWrap.style.display="none"; document.getElementById("e-genre-other").value=""; }
+  TRAITS.forEach(t=>{ document.getElementById("e-tr-"+t.key).value = cur?.traits?.[t.key] || "unknown"; });
+  document.getElementById("e-err").textContent="";
+  ed.showModal();
+}
+function delLocal(ig){
+  if(!confirm("この端末で追加した候補を削除します。よろしいですか？（棚の元データには影響しません）")) return;
+  saveLocal(loadLocal().filter(d=>d.ig!==ig));
+  rebuild(); render();
+}
+
+document.getElementById("addBtn").addEventListener("click",()=>openEditor(null));
+document.getElementById("e-cancel").addEventListener("click",()=>ed.close());
+document.getElementById("edForm").addEventListener("submit",(ev)=>{
+  ev.preventDefault();
+  const ig = document.getElementById("e-ig").value.trim().replace(/^@/,"");
+  if(!ig){ document.getElementById("e-err").textContent="IGハンドルは必須です"; return; }
+  const genre = eGenre.value==="__other" ? document.getElementById("e-genre-other").value.trim() : eGenre.value;
+  const entry = {
+    name: document.getElementById("e-name").value.trim() || ig,
+    ig, threads:null,
+    followers: parseFollowers(document.getElementById("e-fol").value),
+    genre: genre || "—",
+    region: document.getElementById("e-region").value.trim() || null,
+    traits: {}, note: document.getElementById("e-note").value.trim(),
+    checkedAt: todayStr()
+  };
+  TRAITS.forEach(t=>{ entry.traits[t.key] = document.getElementById("e-tr-"+t.key).value; });
+  const a = loadLocal();
+  const keyOld = editingIg || ig;                     // 編集でハンドルを変えた場合の旧キー
+  let i = a.findIndex(d=>d.ig===keyOld); if(i>=0) a.splice(i,1);
+  let dup = a.findIndex(d=>d.ig===ig);   if(dup>=0) a.splice(dup,1);   // 同ハンドルの二重登録を防ぐ
+  a.push(entry);
+  saveLocal(a); rebuild();
+  if(genre && ![...genreSel.options].some(o=>o.value===genre)){       // フィルタのジャンル選択肢にも反映
+    const o=document.createElement("option"); o.value=genre; o.textContent=genre; genreSel.appendChild(o);
+  }
+  ed.close(); render();
+});
+
+// この端末の追加分を、棚データ配列の形でコピー（チャットに貼ってClaudeに反映してもらう）
+document.getElementById("copyBtn").addEventListener("click",()=>{
+  const a = loadLocal();
+  if(!a.length){ alert("この端末で追加した候補はまだありません。まず「＋ 追加」から入れてください。"); return; }
+  const q=s=>JSON.stringify(s==null?"":s);
+  const text = a.map(d=>{ const t=d.traits||{};
+    return `  {\n`+
+      `    name:${q(d.name)}, ig:${q(d.ig)}, threads:${d.threads?q(d.threads):"null"},\n`+
+      `    followers:${d.followers==null?"null":d.followers}, genre:${q(d.genre)}, region:${d.region?q(d.region):"null"},\n`+
+      `    traits:{nature:${q(t.nature||"unknown")}, battle:${q(t.battle||"unknown")}, beginner:${q(t.beginner||"unknown")}, worldview:${q(t.worldview||"unknown")}},\n`+
+      `    note:${q(d.note)},\n`+
+      `    checkedAt:${q(d.checkedAt)}\n`+
+      `  },`;
+  }).join("\n");
+  navigator.clipboard.writeText(text).then(
+    ()=>alert("コピーしました。チャットに貼って「棚に反映して」と言ってください（IGで裏取りのうえ正式登録します）。"),
+    ()=>window.prompt("コピーできませんでした。下を手動でコピーしてください：", text)
+  );
+});
+
+// ホーム画面ヒントの×
+(function(){ const tip=document.getElementById("tip"), x=document.getElementById("tipX"); if(!tip) return;
+  let hidden=false; try{ hidden = localStorage.getItem("dancerShelfTipHidden")==="1"; }catch(e){}
+  if(hidden) tip.style.display="none";
+  x && x.addEventListener("click",()=>{ tip.style.display="none"; try{localStorage.setItem("dancerShelfTipHidden","1");}catch(e){} });
+})();
+
+render();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
